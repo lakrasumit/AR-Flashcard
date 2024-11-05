@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mobile AR Flashcards</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+
+        .ui-controls {
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .mobile-button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 20px;
+            background: #2563eb;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            touch-action: manipulation;
+        }
+
+        .mobile-button:active {
+            background: #1d4ed8;
+            transform: translateY(1px);
+        }
+
+        #status-message {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 14px;
+            z-index: 1000;
+            text-align: center;
+            width: 80%;
+            max-width: 300px;
+        }
+
+        #qr-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 2000;
+            display: none;
+        }
+
+        .share-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div id="status-message">Point camera at HIRO marker</div>
+
+    <button class="share-button" onclick="shareApp()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+            <polyline points="16 6 12 2 8 6"></polyline>
+            <line x1="12" y1="2" x2="12" y2="15"></line>
+        </svg>
+    </button>
+
+    <div class="ui-controls">
+        <button class="mobile-button" onclick="showNextContent()">Next Card</button>
+        <button class="mobile-button" onclick="toggleAnimation()">Animate</button>
+    </div>
+
+    <a-scene 
+        embedded
+        arjs='sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;'
+        vr-mode-ui="enabled: false"
+        renderer="antialias: true; alpha: true"
+        loading-screen="enabled: false">
+
+        <a-marker preset="hiro" smooth="true" smoothCount="5" smoothTolerance="0.01">
+            <!-- DNA Structure -->
+            <a-entity class="content" id="dna" position="0 0 0">
+                <a-cylinder position="0 0.5 0" radius="0.2" height="2" color="#ff4444" 
+                    animation="property: rotation; to: 0 360 0; dur: 3000; easing: linear; loop: true; enabled: false">
+                    <a-sphere position="0.3 0.8 0" radius="0.1" color="#4444ff"></a-sphere>
+                    <a-sphere position="-0.3 0.4 0" radius="0.1" color="#4444ff"></a-sphere>
+                    <a-sphere position="0.3 0 0" radius="0.1" color="#4444ff"></a-sphere>
+                    <a-sphere position="-0.3 -0.4 0" radius="0.1" color="#4444ff"></a-sphere>
+                </a-cylinder>
+                <a-text value="DNA Structure\nDouble Helix" position="-1 2 0" scale="1.5 1.5 1.5" align="center"></a-text>
+            </a-entity>
+
+            <!-- Math Formula -->
+            <a-entity class="content" id="math" position="0 0 0" visible="false">
+                <a-plane position="0 1 0" rotation="-90 0 0" width="2" height="2" color="#2196F3">
+                    <a-text value="Pythagorean Theorem\na² + b² = c²" position="0 0 0.1" scale="1 1 1" align="center"></a-text>
+                </a-plane>
+                <a-triangle position="0 0.5 0" vertex-a="0 1 0" vertex-b="-1 0 0" vertex-c="0 0 1" color="#FFC107"
+                    animation="property: rotation; to: 0 360 0; dur: 3000; easing: linear; loop: true; enabled: false">
+                </a-triangle>
+            </a-entity>
+
+            <!-- Chemistry Molecule -->
+            <a-entity class="content" id="molecule" position="0 0 0" visible="false">
+                <a-sphere position="0 1 0" radius="0.3" color="#FF5722"
+                    animation="property: position; dir: alternate; dur: 1000; easing: easeInOutQuad; loop: true; to: 0 1.5 0; enabled: false">
+                    <a-sphere position="0.4 0.2 0" radius="0.2" color="#4CAF50"></a-sphere>
+                    <a-sphere position="-0.4 0.2 0" radius="0.2" color="#4CAF50"></a-sphere>
+                </a-sphere>
+                <a-text value="H₂O Molecule\nWater" position="-1 2 0" scale="1.5 1.5 1.5" align="center"></a-text>
+            </a-entity>
+        </a-marker>
+
+        <a-entity camera></a-entity>
+    </a-scene>
+
+    <script>
+        const contents = ['dna', 'math', 'molecule'];
+        let currentIndex = 0;
+        let isAnimating = false;
+
+        function showNextContent() {
+            // Hide all content
+            contents.forEach(id => {
+                document.getElementById(id).setAttribute('visible', false);
+            });
+
+            // Show next content
+            currentIndex = (currentIndex + 1) % contents.length;
+            document.getElementById(contents[currentIndex]).setAttribute('visible', true);
+            
+            // Update status message
+            updateStatusMessage();
+        }
+
+        function toggleAnimation() {
+            isAnimating = !isAnimating;
+            
+            // Toggle animations based on current content
+            const currentContent = document.getElementById(contents[currentIndex]);
+            const animatedElements = currentContent.querySelectorAll('[animation]');
+            animatedElements.forEach(el => {
+                el.setAttribute('animation', 'enabled', isAnimating);
+            });
+        }
+
+        function updateStatusMessage() {
+            const messages = {
+                'dna': 'DNA Structure: Double Helix Model',
+                'math': 'Mathematics: Pythagorean Theorem',
+                'molecule': 'Chemistry: H₂O Water Molecule'
+            };
+            document.getElementById('status-message').textContent = messages[contents[currentIndex]];
+        }
+
+        // Marker detection feedback
+        const marker = document.querySelector('a-marker');
+        marker.addEventListener('markerFound', () => {
+            document.getElementById('status-message').textContent = 'Marker detected! ' + 
+                document.getElementById('status-message').textContent;
+        });
+
+        marker.addEventListener('markerLost', () => {
+            document.getElementById('status-message').textContent = 'Point camera at HIRO marker';
+        });
+
+        // Handle camera initialization
+        window.addEventListener('camera-init', (data) => {
+            console.log('AR Camera initialized');
+        });
+
+        window.addEventListener('camera-error', (error) => {
+            console.error('AR Camera error:', error);
+            document.getElementById('status-message').textContent = 'Camera error. Please refresh and try again.';
+        });
+
+        // Share functionality
+        async function shareApp() {
+            const shareData = {
+                title: 'AR Flashcards',
+                text: 'Check out these AR educational flashcards!',
+                url: window.location.href
+            };
+
+            try {
+                if (navigator.share) {
+                    await navigator.share(shareData);
+                } else {
+                    // Fallback copy to clipboard
+                    await navigator.clipboard.writeText(window.location.href);
+                    const statusMsg = document.getElementById('status-message');
+                    statusMsg.textContent = 'Link copied to clipboard!';
+                    setTimeout(() => updateStatusMessage(), 2000);
+                }
+            } catch (err) {
+                console.error('Share failed:', err);
+            }
+        }
+
+        // Initialize
+        updateStatusMessage();
+    </script>
+</body>
+</html>
